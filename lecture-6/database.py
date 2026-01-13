@@ -7,7 +7,7 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
-    # Create areas table
+    # エリア情報を保存するテーブルを作成します
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS areas (
         area_code TEXT PRIMARY KEY,
@@ -15,8 +15,8 @@ def init_db():
     )
     """)
     
-    # Create weather_forecasts table
-    # Removed temp columns as per request
+    
+    # 天気予報情報を保存するテーブルを作成します
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS weather_forecasts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,10 +44,6 @@ def save_area(area_code, area_name):
 def save_weather_forecast(area_code, forecast_date, weather):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    # We want to replace if same area and date? Or keep history?
-    # Schema doesn't enforce unique area+date. 
-    # But usually we want the latest fetch for a date.
-    # We can just insert, and the select query handles getting the latest fetched_at.
     cursor.execute("""
     INSERT INTO weather_forecasts (area_code, forecast_date, weather, fetched_at)
     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
@@ -95,16 +91,11 @@ def get_specific_dates_forecast(area_code, dates):
     ORDER BY fetched_at DESC
     """
     
-    # This query might return multiple entries for the same date (different fetch times).
-    # We need to filter in python or upgrade query to group by date.
-    # Let's do a simple select and filter in python for latest fetched_at per date.
-    
+   
     cursor.execute(query, (area_code, *dates))
     rows = cursor.fetchall()
     conn.close()
     
-    # Process checks: we want one entry per date, the one with max fetched_at (implied by ORDER BY fetched_at DESC in pure select? No, ORDER BY applies to the set.)
-    # Actually, simply iterating and keeping the first occurrence of each date works if ordered by fetched_at DESC.
     
     result_map = {}
     for row in rows:
@@ -113,7 +104,7 @@ def get_specific_dates_forecast(area_code, dates):
         if d not in result_map:
             result_map[d] = w
             
-    # Return list in order of requested dates, or empty if missing
+    # リクエストされた日付の順序で結果を返します。存在しない場合は空にします
     result = []
     for d in dates:
         if d in result_map:

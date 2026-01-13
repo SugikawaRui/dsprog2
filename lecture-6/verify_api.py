@@ -17,13 +17,14 @@ def test_area_fetch():
 
 def test_weather_fetch():
     print("Testing Weather Fetch (Tokyo 130000)...")
-    # 130000 is usually Tokyo
+    
+    # 130000は東京です
     data = fetch_weather("130000")
     if not data:
         print("FAIL: No data returned for Tokyo weather")
         return False
     
-    # Check structure
+    # データが期待される形式であることを確認します。具体的には、最初の要素に"timeSeries"キーが存在し、その中に"areas"キーが含まれていることを確認します。
     try:
         report = data[0]
         time_series = report["timeSeries"][0]
