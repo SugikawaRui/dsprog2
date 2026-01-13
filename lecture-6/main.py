@@ -24,17 +24,7 @@ def main(page: ft.Page):
     
     weather_list = ft.ListView(expand=True, spacing=10, padding=20)
     
-    # Removed old get_weather_detail as it is redefined below in the new logic block. 
-    # However, to be clean, I should've done one big replace. 
-    # Since I did the bottom part, I effectively have two get_weather_detail functions now if I paste it at the bottom?
-    # No, I replaced update_weather_list and below. 
-    # I need to replace the old get_weather_detail with NOTHING or the new one.
-    # Actually, I pasted the NEW get_weather_detail inside the previous call? 
-    # Let me check the previous call content... 
-    # YES, I pasted 'def get_weather_detail...' inside the replacement content of step 93.
-    # So I need to DELETE the OLD get_weather_detail which is at lines 27..111.
-
-    # Database init
+    
     from database import init_db, save_area, save_weather_forecast, get_specific_dates_forecast
     init_db()
 
@@ -45,24 +35,26 @@ def main(page: ft.Page):
             return
 
         if e.data == "true":
-            # Show loading
+            # ローディングを表示
             tile.controls = [ft.ProgressBar()]
             tile.update()
             
-            # 1. Fetch from API
+            # １　APIから取得
             weather_data = fetch_weather(area_code)
             
             error_msg = None
             if not weather_data:
                 error_msg = "Failed to load weather data from API."
             else:
-                # 2. Parse and Save to DB
+
+
+                # 2. DBに保存
                 try:
                     report = weather_data[0]
                     time_series = report["timeSeries"][0]
                     time_defines = time_series["timeDefines"]
                     
-                    # We save the area name to be sure
+                    
                     save_area(area_code, area_name)
                     
                     for i, area_weather in enumerate(time_series["areas"]):
@@ -81,8 +73,7 @@ def main(page: ft.Page):
                 except (IndexError, KeyError) as err:
                     error_msg = f"Error parsing/saving data: {err}"
 
-            # 3. Read from DB to display
-            # Target dates: Yesterday, Today, Tomorrow
+            # 3. 特定の日付の予報を取得
             today = datetime.date.today()
             yesterday = today - datetime.timedelta(days=1)
             tomorrow = today + datetime.timedelta(days=1)
@@ -95,16 +86,13 @@ def main(page: ft.Page):
             
             db_forecasts = get_specific_dates_forecast(area_code, target_dates)
             
-            # Map for quick lookup
-            # db_forecasts is list of dicts: {"date": "YYYY-MM-DD", "weather": "..."}
             forecast_map = {item["date"]: item["weather"] for item in db_forecasts}
             
-            # Always build UI from target_dates to ensure 3 columns
+            # 4. UI更新
             forecast_controls = []
             day_forecasts = []
             
             for date_str in target_dates:
-                # Convert date string to date object and format as MM-DD
                 try:
                     forecast_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
                     date_label = forecast_date.strftime("%m-%d")
@@ -143,7 +131,7 @@ def main(page: ft.Page):
     def update_weather_list(index):
         weather_list.controls.clear()
         
-        # Get selected center code
+        # 中心コードを取得
         center_code = list(centers.keys())[index]
         children_codes = centers[center_code]["children"]
         
@@ -152,10 +140,10 @@ def main(page: ft.Page):
                 office_data = offices[code]
                 name = office_data["name"]
                 
-                # Save area info to DB when listing
+                # DBに保存
                 save_area(code, name)
                 
-                # Create ExpansionTile
+                # オンデマンドで詳細を取得
                 tile = ft.ExpansionTile(
                     title=ft.Text(name),
                     subtitle=ft.Text("Click to view forecast"),
@@ -175,7 +163,7 @@ def main(page: ft.Page):
             centers = data.get("centers", {})
             offices = data.get("offices", {})
             
-            # Populate Rail
+            # ナビゲーションレールの宛先を設定
             rail.destinations = [
                 ft.NavigationRailDestination(
                     icon=ft.Icons.LOCATION_CITY, 
@@ -184,7 +172,7 @@ def main(page: ft.Page):
                 ) for code, center in centers.items()
             ]
             
-            # Initial update
+            #  最初の天気リストを表示
             if centers:
                 update_weather_list(0)
             
@@ -192,7 +180,7 @@ def main(page: ft.Page):
         else:
             page.add(ft.Text("Failed to load area list.", color="red"))
 
-    # Layout
+    # レイアウトの設定
     page.add(
         ft.Row(
             [
@@ -201,7 +189,7 @@ def main(page: ft.Page):
                 weather_list,
             ],
             expand=True,
-            height=500 # Explicit height for scrolling
+            height=500 
         )
     )
 

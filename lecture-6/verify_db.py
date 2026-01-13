@@ -6,7 +6,7 @@ DB_NAME = "weather.db"
 def check_db():
     from database import init_db, save_area, save_weather_forecast, get_latest_forecasts
     
-    # Initialize DB for testing
+    # DBを初期化してテーブルを作成します
     init_db()
     
     if not os.path.exists(DB_NAME):
@@ -16,7 +16,7 @@ def check_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
-    # Check tables
+    # テーブルの存在を確認します
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = [row[0] for row in cursor.fetchall()]
     print(f"Tables found: {tables}")
@@ -25,14 +25,12 @@ def check_db():
         print("FAIL: Missing tables.")
         return False
 
-    # Check data (assuming main.py ran or we can insert dummy)
-    # Since we can't run GUI, we can manually test database.py functions
+    # データ挿入と取得のテストを行います
     from database import save_area, save_weather_forecast, get_latest_forecasts
     
-    # Test Insert
     print("Testing Insert...")
     save_area("999999", "Test Area")
-    # Insert Yesterday, Today, Tomorrow
+    
     import datetime
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
@@ -42,7 +40,8 @@ def check_db():
     save_weather_forecast("999999", today.strftime("%Y-%m-%d"), "Today Weather")
     save_weather_forecast("999999", tomorrow.strftime("%Y-%m-%d"), "Tomorrow Weather")
     
-    # Test Retrieve Logic
+    
+    # 最新の予報を取得します
     from database import get_specific_dates_forecast
     
     print("Testing Retrieve Specific Dates...")
@@ -58,7 +57,8 @@ def check_db():
         return False
         
     print(f"Retrieved {len(forecasts)} records.")
-    # Check simple presence
+    
+    # 昨日と今日の日付が含まれていることを確認します
     dates_found = [f["date"] for f in forecasts]
     if yesterday.strftime("%Y-%m-%d") in dates_found and \
        today.strftime("%Y-%m-%d") in dates_found:
